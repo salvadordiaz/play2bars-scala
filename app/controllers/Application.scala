@@ -3,9 +3,11 @@ package controllers
 import play.api.data.Form
 import play.api.data.Forms.{single, text}
 import play.api.mvc.{Action, Controller}
-import com.codahale.jerkson.Json
 
-import models.Bar
+import org.squeryl.PrimitiveTypeMode._
+
+import com.codahale.jerkson.Json
+import models.{BarDb, Bar}
 
 
 object Application extends Controller {
@@ -18,17 +20,23 @@ object Application extends Controller {
 
   def addBar() = Action { implicit request =>
     barForm.bindFromRequest.value map { name =>
-      Bar.create(new Bar(null, name))
-      Redirect(routes.Application.index())
+      inTransaction {
+        val bar: Bar = new Bar(name)
+        BarDb.bars.insert(bar)
+        Redirect(routes.Application.index())
+      }
     } getOrElse BadRequest
   }
 
   def listBars() = Action {
-    val bars = Bar.findAll()
-
-    val json = Json.generate(bars)
-
-    Ok(json).as("application/json")
+    inTransaction {
+      val barsQuery = from(BarDb.bars)(bar =>
+        select(bar)
+      )
+      val json = Json.generate(barsQuery)
+      println(json)
+      Ok(json).as("application/json")
+    }
   }
-  
+
 }

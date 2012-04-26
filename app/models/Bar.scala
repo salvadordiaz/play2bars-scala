@@ -1,29 +1,18 @@
 package models
 
-import play.api.db._
-import play.api.Play.current
-import net.vz.mongodb.jackson.{Id, ObjectId}
-import org.codehaus.jackson.annotate.JsonProperty
-import play.modules.mongodb.jackson.MongoDB
-import reflect.BeanProperty
+import org.squeryl._
+import org.squeryl.Schema
 
 
-class Bar(@ObjectId @Id val id: String,
-          @BeanProperty @JsonProperty("name") val name: String) {
-  @ObjectId @Id def getId = id;
+class BarDbObject extends KeyedEntity[Long] {
+  val id: Long = 0
 }
 
-object Bar {
-  private lazy val db = MongoDB.collection("bars", classOf[Bar], classOf[String])
+case class Bar(val name: String) extends BarDbObject {
+  //override def toString = { "\"name\":\"%s\"".format(name) }
+}
 
-  def create(bar: Bar) { db.save(bar) }
-  def findAll() = { db.find().toArray }
+object BarDb extends Schema {
+  val bars = table[Bar]("BAR")
 
-  def apply() = {
-
-  }
-
-  def unapply() = {
-
-  }
 }
